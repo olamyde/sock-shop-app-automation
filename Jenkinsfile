@@ -1,8 +1,30 @@
 pipeline {
     agent any
     parameters {
-        string(name: 'IMAGE_NAME', defaultValue: '', description: 'Base name of the Docker image (leave blank to use defaults for each service)')
-        string(name: 'VERSION_TAG', defaultValue: '', description: 'Tag for the Docker image (leave blank to auto-generate using build number and commit hash)')
+        choice(
+            name: 'IMAGE_NAME', 
+            choices: [
+                'weaveworksdemos/carts',
+                'mongo',
+                'weaveworksdemos/catalogue',
+                'weaveworksdemos/catalogue-db',
+                'weaveworksdemos/front-end',
+                'weaveworksdemos/orders',
+                'weaveworksdemos/payment',
+                'weaveworksdemos/queue-master',
+                'rabbitmq',
+                'redis',
+                'weaveworksdemos/shipping',
+                'weaveworksdemos/user',
+                'weaveworksdemos/user-db'
+            ], 
+            description: 'Select the base image for the Docker image (specific to each service)'
+        )
+        string(
+            name: 'VERSION_TAG', 
+            defaultValue: '1.0.0 or build-123abc', // Sample format for guidance
+            description: 'Tag for the Docker image (e.g., 1.0.0, build-123abc; leave blank to auto-generate using build number and commit hash)'
+        )
     }
     environment {
         KUBECONFIG = credentials('kubeconfig') // Replace with your Jenkins credential ID for Kubeconfig
@@ -50,9 +72,9 @@ pipeline {
                         'user-db': 'weaveworksdemos/user-db'
                     ]
 
-                    // Use the IMAGE_NAME parameter if provided; otherwise, use default images for each service
+                    // Use the IMAGE_NAME parameter for selected image or default images for each service
                     def images = defaultImages.collectEntries { service, baseImage ->
-                        [(service): params.IMAGE_NAME ? "${params.IMAGE_NAME}/${service}" : baseImage]
+                        [(service): params.IMAGE_NAME ? "${params.IMAGE_NAME}" : baseImage]
                     }
 
                     // Iterate through the images map and apply the VERSION_TAG
